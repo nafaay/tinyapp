@@ -35,7 +35,7 @@ const urlDatabase = {
  * This function will take a number n and create a random
  * alphanumeric string to simulate generating a shortURL 
  */
-const generateRandomAlphaNum = function () {
+const generateRandomString = function () {
   let str = "";// will contain the final random 6 alphanum chars
   let rd; // get number between 0 and 9, or number between 65 and 90
           // or number between 97 and 122 to simulate number, uppercase,
@@ -44,7 +44,7 @@ const generateRandomAlphaNum = function () {
   for (let i = 1; i <= 6; i++) {
     chx = getRndInteger(0,3);
     if (chx === 0) {
-      // We use Math.floor because to get only integers.
+      // We use Math.floor because to get only integers
       rd = getRndInteger(0, 10) // number between 0 and 9
       str += rd;
     }
@@ -80,10 +80,10 @@ app.post("/urls", (req, res) => {
   // We retrieve data from the body of the request
   const longURL  = req.body.longURL;
   // Create a random shortURL 
-  const shortURL = generateRandomAlphaNum();
+  const shortURL = generateRandomString();
   // Add key: value ("shortYURL": "longURL") to the object
   urlDatabase[shortURL] = req.body.longURL;
-  res.send(urlDatabase);
+  res.redirect("/urls");
 });
 /**
  * GET route to show the form to create an URL
