@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/nafaay/tinyapp/issues"
   },
-  "homepage": "https://github.com/nafaay/tinyapp#readme"
+  "homepage": "https://github.com/nafaay/tinyapp#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
 }
