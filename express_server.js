@@ -83,7 +83,8 @@ app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
   // Add key: value ("shortYURL": "longURL") to the object
   urlDatabase[shortURL] = req.body.longURL;
-  res.redirect("/urls");
+  // redirect shortURL to see its longURL
+  res.redirect(`/urls/${shortURL}`);
 });
 /**
  * GET route to show the form to create an URL
@@ -107,6 +108,15 @@ app.get("/urls/:shortURL", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+/**
+ * we can here see the website of longURL if we click on shortURL
+ * Redirect any request to "/u/:shortURL" to its longURL
+*/
+app.get("/u/:shortURL", (req, res) => {
+  const shortURL = req.params.shortURL;
+  const longURL = urlDatabase[shortURL];
+  res.redirect(longURL);
+});
 
 /**
  * Listen on provided port
