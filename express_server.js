@@ -15,7 +15,7 @@ const PORT = 8080; // default port 8080
 app.set("view engine", "ejs");
 
 /**
- * bodyParser is a middleware that will help us 
+ * bodyParser is a middleware that will help us
  * to read data buffer when using POST requests
  */
 const bodyParser = require("body-parser");
@@ -33,43 +33,41 @@ const urlDatabase = {
 
 /**
  * This function will take a number n and create a random
- * alphanumeric string to simulate generating a shortURL 
+ * alphanumeric string to simulate generating a shortURL
  */
-const generateRandomString = function () {
+const generateRandomString = function() {
   let str = "";// will contain the final random 6 alphanum chars
   let rd; // get number between 0 and 9, or number between 65 and 90
-          // or number between 97 and 122 to simulate number, uppercase,
-          // lowecase
+  // or number between 97 and 122 to simulate number, uppercase,
+  // lowecase
   let chx; // get a number between 0 and 2
   for (let i = 1; i <= 6; i++) {
     chx = getRndInteger(0,3);
     if (chx === 0) {
       // We use Math.floor because to get only integers
-      rd = getRndInteger(0, 10) // number between 0 and 9
+      rd = getRndInteger(0, 10); // number between 0 and 9
       str += rd;
-    }
-    else if (chx === 1) {
+    } else if (chx === 1) {
       rd = getRndInteger(65, 91);
       // method will convert Unicode values to characters
       str += String.fromCharCode(rd); // uppercase char
-    }
-    else if (chx === 2) {
-      rd = getRndInteger(97, 123) 
+    } else if (chx === 2) {
+      rd = getRndInteger(97, 123);
       str += String.fromCharCode(rd); // lowecase char
     }
   }
   return str.trim();
-}
+};
 
-function getRndInteger(min, max) {
+const getRndInteger = function(min, max) {
   return Math.floor(Math.random() * (max - min)) + min;
-}
+};
 
 /**
  * Showing list of urls via the template urls_index
  */
 app.get("/urls", (req, res) =>{
-  const templateVars = {urls: urlDatabase}
+  const templateVars = {urls: urlDatabase};
   res.render("urls_index", templateVars);
 });
 
@@ -77,9 +75,7 @@ app.get("/urls", (req, res) =>{
  * POST request from the Form Submission to create a longURL
  */
 app.post("/urls", (req, res) => {
-  // We retrieve data from the body of the request
-  const longURL  = req.body.longURL;
-  // Create a random shortURL 
+  // Create a random shortURL
   const shortURL = generateRandomString();
   // Add key: value ("shortYURL": "longURL") to the object
   urlDatabase[shortURL] = req.body.longURL;
@@ -115,7 +111,12 @@ app.get("/urls/:shortURL", (req, res) => {
 app.get("/u/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   const longURL = urlDatabase[shortURL];
-  res.redirect(longURL);
+  if (!longURL) {
+    return res.status(404).send(`The url ${shortURL} does not exist`);
+  } else {
+    const longURL = urlDatabase[shortURL];
+    res.redirect(longURL);
+  }
 });
 
 /**
