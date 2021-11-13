@@ -15,8 +15,16 @@ const PORT = 8080; // default port 8080
 app.set("view engine", "ejs");
 
 /**
+ * bodyParser is a middleware that will help us 
+ * to read data buffer when using POST requests
+ */
+const bodyParser = require("body-parser");
+app.use(bodyParser.urlencoded({ extended: true }));
+
+
+/**
  * Object simulating a database to work on.
- * "short urls : "long urls"
+ * '"short urls" : "long urls"'
  */
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -37,6 +45,9 @@ app.get("/urls", (req, res) =>{
 
 /**
  * GET route to show the form to create an URL
+ * Attention: This must be above any specific route (/urls/:id)
+ * If not Express will think that /new is a specific route like
+ * /:shortURL
  */
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
@@ -44,8 +55,8 @@ app.get("/urls/new", (req, res) => {
 
 /**
  * Render information about a single URL
-   shortURL is from the page, we can get it then from req.params
-   longURL is the value for this particular shortURL from urlDatabase(key)
+   shortURL is from the page, we can get itfrom req.params
+   longURL is the value for this shortURL from urlDatabase(key)
  */
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
