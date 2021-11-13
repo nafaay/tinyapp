@@ -31,18 +31,60 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+/**
+ * This function will take a number n and create a random
+ * alphanumeric string to simulate generating a shortURL 
+ */
+const generateRandomAlphaNum = function () {
+  let str = "";// will contain the final random 6 alphanum chars
+  let rd; // get number between 0 and 9, or number between 65 and 90
+          // or number between 97 and 122 to simulate number, uppercase,
+          // lowecase
+  let chx; // get a number between 0 and 2
+  for (let i = 1; i <= 6; i++) {
+    chx = getRndInteger(0,3);
+    if (chx === 0) {
+      // We use Math.floor because to get only integers.
+      rd = getRndInteger(0, 10) // number between 0 and 9
+      str += rd;
+    }
+    else if (chx === 1) {
+      rd = getRndInteger(65, 91);
+      // method will convert Unicode values to characters
+      str += String.fromCharCode(rd); // uppercase char
+    }
+    else if (chx === 2) {
+      rd = getRndInteger(97, 123) 
+      str += String.fromCharCode(rd); // lowecase char
+    }
+  }
+  return str.trim();
+}
 
-// app.get("/", (req, res) => {
-//   res.send("Hello!");
-// });
+function getRndInteger(min, max) {
+  return Math.floor(Math.random() * (max - min)) + min;
+}
 
-
+/**
+ * Showing list of urls via the template urls_index
+ */
 app.get("/urls", (req, res) =>{
   const templateVars = {urls: urlDatabase}
   res.render("urls_index", templateVars);
-})
+});
 
-
+/**
+ * POST request from the Form Submission to create a longURL
+ */
+app.post("/urls", (req, res) => {
+  // We retrieve data from the body of the request
+  const longURL  = req.body.longURL;
+  // Create a random shortURL 
+  const shortURL = generateRandomAlphaNum();
+  // Add key: value ("shortYURL": "longURL") to the object
+  urlDatabase[shortURL] = req.body.longURL;
+  res.send(urlDatabase);
+});
 /**
  * GET route to show the form to create an URL
  * Attention: This must be above any specific route (/urls/:id)
