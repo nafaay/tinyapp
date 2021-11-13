@@ -13,9 +13,10 @@ const PORT = 8080; // default port 8080
  * Set ejs as the view engine
  */
 app.set("view engine", "ejs");
+
 /**
  * Object simulating a database to work on.
- * "short url"s : "long urls"
+ * "short urls : "long urls"
  */
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -23,14 +24,27 @@ const urlDatabase = {
 };
 
 
-app.get("/", (req, res) => {
-  res.send("Hello!");
-});
+// app.get("/", (req, res) => {
+//   res.send("Hello!");
+// });
+
 
 app.get("/urls", (req, res) =>{
   const templateVars = {urls: urlDatabase}
   res.render("urls_index", templateVars);
 })
+
+/**
+ * Render information about a single URL
+ */
+app.get("/urls/:shortURL", (req, res) => {
+  const shortURL = req.params.shortURL;
+  const longURL = urlDatabase[shortURL];
+  const templateVars = { shortURL, longURL };
+  res.render("urls_show", templateVars);
+});
+
+
 /**
  * Listen on provided port
  */
