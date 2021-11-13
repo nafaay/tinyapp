@@ -82,6 +82,23 @@ app.post("/urls", (req, res) => {
   // redirect shortURL to see its longURL
   res.redirect(`/urls/${shortURL}`);
 });
+
+/**
+ * Handle the POST request to delete a URL from the Object
+ */
+app.post("/urls/:shortURL/delete", (req, res) => {
+  // here we don'use req.body because we get data from a link
+  // not input
+  const shortURL = req.params.shortURL;
+  const longURL = urlDatabase[shortURL];
+  if(!longURL){
+    return res.status(404).send(`The url ${shortURL} does not exist`);
+  }
+  delete urlDatabase[shortURL];
+  res.redirect("/urls");
+
+});
+
 /**
  * GET route to show the form to create an URL
  * Attention: This must be above any specific route (/urls/:id)
@@ -103,6 +120,7 @@ app.get("/urls/:shortURL", (req, res) => {
   const templateVars = { shortURL, longURL };
   res.render("urls_show", templateVars);
 });
+
 
 /**
  * we can here see the website of longURL if we click on shortURL
