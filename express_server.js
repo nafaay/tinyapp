@@ -34,8 +34,18 @@ app.get("/urls", (req, res) =>{
   res.render("urls_index", templateVars);
 })
 
+
+/**
+ * GET route to show the form to create an URL
+ */
+app.get("/urls/new", (req, res) => {
+  res.render("urls_new");
+});
+
 /**
  * Render information about a single URL
+   shortURL is from the page, we can get it then from req.params
+   longURL is the value for this particular shortURL from urlDatabase(key)
  */
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
