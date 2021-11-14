@@ -25,7 +25,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 
 /**
- * Object simulating a database to work on.
+ * Object simulating a database of urls to work on.
  * '"short urls" : "long urls"'
  */
 const urlDatabase = {
@@ -34,7 +34,64 @@ const urlDatabase = {
 };
 
 /**
- * This function will take a number n and create a random
+ * Object simulating a database of users.
+ * each user id is an object of {id, email, password}
+ */
+
+const users = {
+  "userRandomID": {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "purple-monkey-dinosaur"
+  },
+  "user2RandomID": {
+    id: "user2RandomID",
+    email: "user2@example.com",
+    password: "dishwasher-funk"
+  }
+}
+
+const checkIfUserExists = function(userID){
+  let user = {};
+  if (users.hasOwnProperty(userID)) {
+    const email = users[userID].email;
+    const password = users[userID].password;
+    user = { userID, email, password }
+  }
+  else {
+    user = null;
+  }
+  return user;
+}
+
+/**
+ * check if the email entered by the user is always 
+ * in databse of users (here object users) 
+ */
+const checkEmailAlreadyExists = function (email) {
+  for (keys of Object.keys(users)) {
+    if (users[keys]['email'] === email) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * check if the password entered by the user is in the object
+ * users to allow the user login in or not
+ */
+const checkPasswordIfExists = function (password) {
+  for (keys of Object.keys(users)) {
+    if (users[keys]['password'] === password) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * This function will create a random
  * alphanumeric string to simulate generating a shortURL
  */
 const generateRandomString = function() {
@@ -66,9 +123,13 @@ const getRndInteger = function(min, max) {
 };
 
 app.get("/", (req, res) => {
+  const userID = req.cookies['user_id'];
+  const user = checkIfUserExists(userID);
+  if (!user) {
+    res.status(403).send("Not Authorized");
+  }
   const templateVars = {
-    username: req.cookies['username'],
-    urls: urlDatabase
+    user, urls: urlDatabase
   };
   res.render("urls_index", templateVars);
 });
@@ -78,9 +139,13 @@ app.get("/", (req, res) => {
  * Showing list of urls via the template urls_index
  */
 app.get("/urls", (req, res) =>{
+  const userID = req.cookies['user_id'];
+  const user = checkIfUserExists(userID);
+  if(!user){
+    res.redirect("/login");
+  }
   const templateVars = {
-    username: req.cookies['username'],
-    urls: urlDatabase
+    user, urls: urlDatabase
   };
   res.render("urls_index", templateVars);
 });
@@ -88,20 +153,70 @@ app.get("/urls", (req, res) =>{
 /**
  * Route to login
  */
-app.post("/login", (req, res) =>{
-  if (req.body.username) {
-    res.cookie("username", req.body.username);
-  }
+app.post("/logout", (req, res) => {
+  res.clearCookie("user_id");
   res.redirect("/urls");
 });
 
 /**
- * Route to login
+ * Route to POST register
  */
-app.post("/logout", (req, res) => {
-  res.clearCookie("username");
-  res.redirect("/urls");
+ app.post("/register",(req, res) =>{
+   const email = req.body.email;
+   const password = req.body.password;
+   // Ask the user to fill in the empty zones.
+   if (!email || !password) {
+     return res.status(403).send(`email or password is missing". Please <a href='/register'> Fill in empty areas</a>`)
+   }
+
+   if (checkEmailAlreadyExists(email)) {
+     return res.status(403).send(`This email alrady exists". Please <a href='/register'> try another one</a>`)
+   }
+   // create a userID randomly with 12 characters
+   const userID1 = generateRandomString();
+   const userID2 = generateRandomString();
+   const userID = userID1 + userID2;
+   const user = { userID, email, password };
+   users[userID] = user;
+   res.cookie('user_id', userID);
+   res.redirect('/urls');
+ })
+
+/**
+ * Route to POST login
+ */
+app.post("/login", (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+  // Ask the user to fill in the empty zones.
+  if (!email || !password) {
+    return res.status(403).send(`email or password is missing". Please <a href='/register'> Fill in empty areas</a>`)
+  }
+  // check if the email or the password is not in the database 
+  // the user has to login with another email 
+  // and or another password that match email and password in database
+  if (!checkEmailAlreadyExists(email) || !checkPasswordIfExists(password)) {
+    return res.status(403).send(`email or password does not match". Please <a href='/login'> try again</a>`)
+  }
+// Do we have to check for the cookie here
+  res.redirect('/urls');
+})
+
+
+/**
+ * Route to GET register
+ */
+app.get("/register", (req, res) =>{
+  res.render("register");
 });
+
+/**
+ * Route to GET login
+ */
+app.get("/login", (req, res) => {
+  res.render("login");
+});
+
 
 /**
  * POST request from the Form Submission to create a longURL
@@ -140,7 +255,15 @@ app.post("/urls/:shortURL/delete", (req, res) => {
  * /:shortURL
  */
 app.get("/urls/new", (req, res) => {
-  const templateVars = {username : req.cookies["username"]};
+  const userID = req.cookies['user_id'];
+  const user = checkIfUserExists(userID);
+  if (!user) {
+    res.status(403).send("Not Authorized");
+  }
+  const templateVars = {
+    user, urls: urlDatabase
+  };
+
   res.render("urls_new", templateVars);
 });
 
@@ -150,11 +273,16 @@ app.get("/urls/new", (req, res) => {
    longURL is the value for this shortURL from urlDatabase(key)
  */
 app.get("/urls/:shortURL", (req, res) => {
+  const userID = req.cookies['user_id'];
+  const user = checkIfUserExists(userID);
+  if (!user) {
+    res.status(403).send("Not Authorized");
+  }
   const shortURL = req.params.shortURL;
   const longURL = urlDatabase[shortURL];
-  const username = req.cookies['username'];
-
-  const templateVars = { username, shortURL, longURL };
+  const templateVars = {
+    user, shortURL, longURL
+  };
   res.render("urls_show", templateVars);
 });
 
