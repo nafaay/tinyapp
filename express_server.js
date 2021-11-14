@@ -77,7 +77,10 @@ app.get("/urls", (req, res) =>{
 app.post("/urls", (req, res) => {
   // Create a random shortURL
   const shortURL = generateRandomString();
-  // Add key: value ("shortYURL": "longURL") to the object
+  // Add key: value ("shortURL": "longURL") to the object
+  if (req.body.longURL.trim() === ""){
+    res.send("Must be not empty");
+  }
   urlDatabase[shortURL] = req.body.longURL;
   // redirect shortURL to see its longURL
   res.redirect(`/urls/${shortURL}`);
@@ -87,7 +90,7 @@ app.post("/urls", (req, res) => {
  * Handle the POST request to delete a URL from the Object
  */
 app.post("/urls/:shortURL/delete", (req, res) => {
-  // here we don'use req.body because we get data from a link
+  // here we don't use req.body because we get data from a link
   // not input
   const shortURL = req.params.shortURL;
   const longURL = urlDatabase[shortURL];
@@ -96,7 +99,6 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   }
   delete urlDatabase[shortURL];
   res.redirect("/urls");
-
 });
 
 /**
@@ -111,7 +113,7 @@ app.get("/urls/new", (req, res) => {
 
 /**
  * Render information about a single URL
-   shortURL is from the page, we can get itfrom req.params
+   shortURL is from the page, we can get it from req.params
    longURL is the value for this shortURL from urlDatabase(key)
  */
 app.get("/urls/:shortURL", (req, res) => {
@@ -119,6 +121,19 @@ app.get("/urls/:shortURL", (req, res) => {
   const longURL = urlDatabase[shortURL];
   const templateVars = { shortURL, longURL };
   res.render("urls_show", templateVars);
+});
+
+
+/**
+ * read the object and if we find the key: value 
+ * shortURL: longURL we edit longURL with the one given
+ * by the user
+ */
+app.post("/urls/:shortURL", (req, res) => {
+  const longURL =  req.body.longURL;
+  const shortURL = req.params.shortURL;
+  urlDatabase[shortURL] = longURL;
+  res.redirect("/urls");
 });
 
 
