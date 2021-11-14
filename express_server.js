@@ -38,8 +38,8 @@ const urlDatabase = {
 const generateRandomString = function() {
   let str = "";// will contain the final random 6 alphanum chars
   let rd; // get number between 0 and 9, or number between 65 and 90
-  // or number between 97 and 122 to simulate number, uppercase,
-  // lowecase
+  // or number between 97 and 122 to simulate numbers, uppercase and
+  // lowecase characters
   let chx; // get a number between 0 and 2
   for (let i = 1; i <= 6; i++) {
     chx = getRndInteger(0,3);
@@ -78,7 +78,7 @@ app.post("/urls", (req, res) => {
   // Create a random shortURL
   const shortURL = generateRandomString();
   // Add key: value ("shortURL": "longURL") to the object
-  if (req.body.longURL.trim() === ""){
+  if (req.body.longURL.trim() === "") {
     res.send("Must be not empty");
   }
   urlDatabase[shortURL] = req.body.longURL;
@@ -94,7 +94,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   // not input
   const shortURL = req.params.shortURL;
   const longURL = urlDatabase[shortURL];
-  if(!longURL){
+  if (!longURL) {
     return res.status(404).send(`The url ${shortURL} does not exist`);
   }
   delete urlDatabase[shortURL];
@@ -125,7 +125,7 @@ app.get("/urls/:shortURL", (req, res) => {
 
 
 /**
- * read the object and if we find the key: value 
+ * read the object and if we find the key: value
  * shortURL: longURL we edit longURL with the one given
  * by the user
  */
