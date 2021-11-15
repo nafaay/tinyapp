@@ -11,15 +11,18 @@
         <a class="nav-item nav-link" href="/urls">My URLs</a>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
         <% if(!user){ %>
-          <a class="nav-item nav-link" href="/login">Login</a>
-        <a class="nav-item nav-link" href="/register">Register</a>
+          <a href="/login" class="btn btn-warning">Login</a>
+          <span style="margin: 5px;"></span>
+          <a href="/register" class="btn btn-warning">Register</a>
         <% } 
         else { %>
         <span>
           Logged in as: <%= user.email %>
         </span>
         <span style="margin-right: 20px;"> </span>
-          <a class="nav-item nav-link" href="/logout">Logout</a>
+        <form action="/logout" method="POST">
+          <button class="btn btn-danger">Logout</button>
+        </form>
         <% } %>
       </div>
     </div>

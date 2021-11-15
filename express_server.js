@@ -62,6 +62,15 @@ const users = {
   }
 }
 
+const getUserID = function(email, password){
+  for(const key of Object.keys(users)){
+    console.log("key of email  ", key['email']);
+    if( users[key]['email'] === email && users[key]['password'] === password){
+      return key;
+    }
+  }
+  return undefined;
+}
 /**
  * return all short and long urls of user if they exist 
  * if the user has no urls reurn {} 
@@ -160,7 +169,6 @@ app.get("/", (req, res) => {
   }
   const urlsOfUser =  getUrlsOfUserIfExist(userID);
   const templateVars = {
-    // user, urls: urlDatabase
     user, urls: urlsOfUser
   };
 
@@ -173,29 +181,27 @@ app.get("/", (req, res) => {
  */
 app.get("/urls", (req, res) =>{
   const userID = req.cookies['user_id'];
+  console.log("userID ", userID);
   let user;
   if(userID){
     user = checkIfUserExists(userID);
   }
-  if(!user){
-    return res.status(403).send(`You have to Register first`);
-  }
-  // const templateVars = {
-  //   user, urls: urlDatabase
-  // };
+  // if(!user){
+  //   return res.status(403).send(`You have to Register first`);
+  // }
   const urlsOfUser = getUrlsOfUserIfExist(userID);
+  
   const templateVars = {
-    // user, urls: urlDatabase
     user, urls: urlsOfUser
   };
+  console.log("templateVars ",templateVars);
   res.render("urls_index", templateVars);
 });
 
 /**
- * Route to login
+ * Route to logout
  */
-// app.post("/logout", (req, res) => {
-  app.get("/logout", (req, res) =>{
+ app.post("/logout", (req, res) => {
   res.clearCookie("user_id");
   res.redirect("/urls");
 });
@@ -208,7 +214,9 @@ app.get("/urls", (req, res) =>{
    const password = req.body.password;
    // Ask the user to fill in the empty zones.
    if (!email || !password) {
-     return res.status(403).send(`email or password is missing". Please <a href='/register'> Fill in empty areas</a>`)
+     return res
+     .status(403)
+     .send(`email or password is missing". Please <a href='/register'> Fill in empty areas</a>`)
    }
 
    if (checkEmailAlreadyExists(email)) {
@@ -239,7 +247,9 @@ app.post("/login", (req, res) => {
   if (!checkEmailAlreadyExists(email) || !checkPasswordIfExists(password)) {
     return res.status(403).send(`email or password does not match". Please <a href='/login'> try again</a>`)
   }
-
+  const userID = getUserID(email, password);
+  console.log("userID inside post login ", userID);
+  res.cookie('user_id', userID);
   res.redirect('/urls');
 })
 
@@ -268,9 +278,16 @@ app.get("/register", (req, res) =>{
  */
 app.get("/login", (req, res) => {
   const userID = req.cookies['user_id'];
-  const user = checkIfUserExists(userID);
+  let user;
+  if (userID) {
+    user = checkIfUserExists(userID);
+  }
+  const urlsOfUser = getUrlsOfUserIfExist(userID);
+  const templateVars = {
+    user, urls: urlsOfUser
+  };
   if (!user) {
-    res.render('login');
+    res.render('login', templateVars);
   }
   res.redirect('/urls');
 });
@@ -307,7 +324,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   // here we don't use req.body because we get data from a link
   // not input
   const shortURL = req.params.shortURL;
-  const longURL = urlDatabase[shortURL];
+  const longURL = urlDatabase[shortURL]['longURL'];
   if (!longURL) {
     return res.status(404).send(`The url ${shortURL} does not exist`);
   }
@@ -330,6 +347,8 @@ app.get("/urls/new", (req, res) => {
   const templateVars = {
     user, urls: urlDatabase
   };
+
+  console.log("templateVars", templateVars);
 
   res.render("urls_new", templateVars);
 });
@@ -362,7 +381,7 @@ app.get("/urls/:shortURL", (req, res) => {
 app.post("/urls/:shortURL", (req, res) => {
   const longURL =  req.body.longURL;
   const shortURL = req.params.shortURL;
-  urlDatabase[shortURL] = longURL;
+  urlDatabase[shortURL]['longURL'] = longURL;
   res.redirect("/urls");
 });
 
@@ -377,7 +396,7 @@ app.get("/u/:shortURL", (req, res) => {
   if (!longURL) {
     return res.status(404).send(`The url ${shortURL} does not exist`);
   } else {
-    const longURL = urlDatabase[shortURL];
+    const longURL = urlDatabase[shortURL]['longURL'];
     res.redirect(longURL);
   }
 });
