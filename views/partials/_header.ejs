@@ -16,6 +16,10 @@
           <a href="/register" class="btn btn-warning">Register</a>
         <% } 
         else { %>
+        <form action="/logout" method="POST">
+          <button class="btn btn-secondary">Logout</button>
+        </form>
+        <span style="margin-right: 25px;"> </span>
         <span>
           Logged in as: <%= user.email %>
         </span>
