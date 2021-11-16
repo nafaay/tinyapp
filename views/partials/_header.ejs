@@ -14,6 +14,7 @@
           <a href="/login" class="btn btn-warning">Login</a>
           <span style="margin: 5px;"></span>
           <a href="/register" class="btn btn-warning">Register</a>
+<<<<<<< 4aee4c21d503fb560117d781ca1210a09201add7
         <% } 
         else { %>
         <form action="/logout" method="POST">
@@ -28,6 +29,21 @@
           <button class="btn btn-danger">Logout</button>
         </form>
         <% } %>
+=======
+          <% } else { %>
+            <form action="/logout" method="POST">
+              <button class="btn btn-secondary">Logout</button>
+            </form>
+            <span style="margin-right: 25px;"> </span>
+            <span>
+              Logged in as: <%= user.email %>
+            </span>
+            <span style="margin-right: 20px;"> </span>
+            <form action="/logout" method="POST">
+              <button class="btn btn-danger">Logout</button>
+            </form>
+            <% } %>
+>>>>>>> Lint code
       </div>
     </div>
   </nav>
