@@ -17,9 +17,14 @@ const bcrypt = require('bcryptjs');
 /**
  * to use cookies
  */
-const cookieParser = require('cookie-parser');
-app.use(cookieParser());
-/**
+const cookieSession = require('cookie-session');
+app.use(cookieSession({
+  name: 'session',
+  keys: ['key1', 'key2'],
+
+  // Cookie Options
+  maxAge: 24 * 60 * 60 * 1000 // 24 hours
+}))/**
  * Set ejs as the view engine
  */
 app.set("view engine", "ejs");
@@ -127,7 +132,7 @@ const checkEmailAlreadyExists = function (email) {
  * users to allow the user login in or not
  */
 const checkPasswordIfExists = function (password) {
-  const hashedPassword = bcrypt(password, 10);
+  const hashedPassword = bcrypt.hashSync(password, 10);
   for (const keys of Object.keys(users)) {
     if (bcrypt.compareSync(users[keys]['password']), hashedPassword) {
       return true;
@@ -169,7 +174,7 @@ const getRndInteger = function (min, max) {
 };
 
 app.get("/", (req, res) => {
-  const userID = req.cookies['user_id'];
+  const userID = req.session.userID;
   const user = checkIfUserExists(userID);
   if (!user) {
     res.redirect("/login");
@@ -187,7 +192,7 @@ app.get("/", (req, res) => {
  * Showing list of urls via the template urls_index
  */
 app.get("/urls", (req, res) => {
-  const userID = req.cookies['user_id'];
+  const userID = req.session.userID;
   let user;
   if (userID) {
     user = checkIfUserExists(userID);
@@ -233,7 +238,7 @@ app.post("/register", (req, res) => {
   const hashedPassword = bcrypt.hashSync(password, 10);
   const user = { userID, email, hashedPassword };
   users[userID] = user;
-  res.cookie('user_id', userID);
+  req.session.user_id = userID;
   res.redirect('/urls');
 });
 
@@ -254,7 +259,7 @@ app.post("/login", (req, res) => {
     return res.status(403).send(`email or password does not match". Please <a href='/login'> try again</a>`);
   }
   const userID = getUserID(email, password);
-  res.cookie('user_id', userID);
+  req.session.userID = userID;
   res.redirect('/urls');
 });
 
@@ -263,16 +268,20 @@ app.post("/login", (req, res) => {
  * Route to GET register
  */
 app.get("/register", (req, res) => {
-  const userID = req.cookies['user_id'];
-  let user;
+  console.log("get register");
+  const userID = req.session.user_id;
+  let user = null;
+  let  urlsOfUser = null;
   if (userID) {
     user = checkIfUserExists(userID);
+    urlsOfUser  = getUrlsOfUserIfExist(userID);
   }
-  const urlsOfUser = getUrlsOfUserIfExist(userID);
   const templateVars = {
     user, urls: urlsOfUser
   };
+  console.log(user);
   if (!user) {
+    console.log("xxx");
     res.render('register', templateVars);
   }
 
@@ -283,7 +292,7 @@ app.get("/register", (req, res) => {
  * Route to GET login
  */
 app.get("/login", (req, res) => {
-  const userID = req.cookies['user_id'];
+  const userID = req.session.user_id;
   let user;
   if (userID) {
     user = checkIfUserExists(userID);
@@ -303,7 +312,7 @@ app.get("/login", (req, res) => {
  * POST request from the Form Submission to create a longURL
  */
 app.post("/urls", (req, res) => {
-  const userID = req.cookies['user_id'];
+  const userID = req.session.user_id;
   const user = checkIfUserExists(userID);
   if (!user) {
     res.status(403).send("Not Authorized");
@@ -345,7 +354,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
  * /:shortURL
  */
 app.get("/urls/new", (req, res) => {
-  const userID = req.cookies['user_id'];
+  const userID = req.session.user_id;
   const user = checkIfUserExists(userID);
   if (!user) {
     res.status(403).send("Not Authorized");
@@ -362,7 +371,7 @@ app.get("/urls/new", (req, res) => {
    longURL is the value for this shortURL from urlDatabase(key)
  */
 app.get("/urls/:shortURL", (req, res) => {
-  const userID = req.cookies['user_id'];
+  const userID = req.session.user_id;
   const user = checkIfUserExists(userID);
   if (!user) {
     res.status(403).send("Not Authorized");
