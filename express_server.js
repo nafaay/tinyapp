@@ -9,6 +9,14 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 
+/**
+ *  to encrypt passwords
+ */
+
+const bcrypt = require('bcryptjs');
+/**
+ * to use cookies
+ */
 const cookieParser = require('cookie-parser');
 app.use(cookieParser());
 /**
@@ -33,17 +41,10 @@ app.use(bodyParser.urlencoded({ extended: true }));
 //   "9sm5xK": "http://www.google.com"
 // };
 const urlDatabase = {
-<<<<<<< 4aee4c21d503fb560117d781ca1210a09201add7
-  "b2xVn2":{
-    longURL: "http://www.lighthouselabs.ca",
-    userID: "userRandomID"
-  } ,
-=======
   "b2xVn2": {
     longURL: "http://www.lighthouselabs.ca",
     userID: "userRandomID"
   },
->>>>>>> Lint code
   "9sm5xK": {
     longURL: "http://www.google.com",
     userID: "user2RandomID"
@@ -67,110 +68,73 @@ const users = {
     email: "user2@example.com",
     password: "dishwasher-funk"
   }
-}
+};
 
-<<<<<<< 4aee4c21d503fb560117d781ca1210a09201add7
-const getUserID = function(email, password){
-  for(const key of Object.keys(users)){
-    console.log("key of email  ", key['email']);
-    if( users[key]['email'] === email && users[key]['password'] === password){
-=======
 const getUserID = function (email, password) {
   for (const key of Object.keys(users)) {
-    console.log("key of email  ", key['email']);
     if (users[key]['email'] === email && users[key]['password'] === password) {
->>>>>>> Lint code
       return key;
     }
   }
   return undefined;
-}
+};
 /**
- * return all short and long urls of user if they exist 
- * if the user has no urls reurn {} 
+ * return all short and long urls of user if they exist
+ * if the user has no urls reurn {}
  */
-<<<<<<< 4aee4c21d503fb560117d781ca1210a09201add7
-const getUrlsOfUserIfExist = function(userID){
-  const objUrlsUser = {};
-  for(key of Object.keys(urlDatabase)){
-    if(urlDatabase[key]['userID'] === userID){
-      const shortURL = key;
-      const longURL  = urlDatabase[key]['longURL'];
-=======
 const getUrlsOfUserIfExist = function (userID) {
   const objUrlsUser = {};
-  for (key of Object.keys(urlDatabase)) {
+  for (const key of Object.keys(urlDatabase)) {
     if (urlDatabase[key]['userID'] === userID) {
       const shortURL = key;
       const longURL = urlDatabase[key]['longURL'];
->>>>>>> Lint code
       objUrlsUser[shortURL] = longURL;
     }
   }
   return objUrlsUser;
-}
-
-<<<<<<< 4aee4c21d503fb560117d781ca1210a09201add7
-/**
- * return a valid user if exists if not return null 
- */
-const checkIfUserExists = function(userID){
-  let user = {};
-  if (users.hasOwnProperty(userID)) {
-    const email = users[userID].email;
-    const password = users[userID].password;
-    user = { userID, email, password }
-  }
-  else {
-    user = null;
-  }
-  return user;
-}
+};
 
 /**
-=======
-/**
- * return a valid user if exists if not return null 
+ * return a valid user if exists if not return null
  */
 const checkIfUserExists = function (userID) {
   let user = {};
   if (users.hasOwnProperty(userID)) {
     const email = users[userID].email;
     const password = users[userID].password;
-    user = { userID, email, password }
-  }
-  else {
+    user = { userID, email, password };
+  } else {
     user = null;
   }
   return user;
-}
+};
 
 /**
->>>>>>> Lint code
- * check if the email entered by the user is always 
- * in databse of users (here object users) 
+ * check if the email entered by the user is always
+ * in databse of users (here object users)
  */
 const checkEmailAlreadyExists = function (email) {
-  for (keys of Object.keys(users)) {
+  for (const keys of Object.keys(users)) {
     if (users[keys]['email'] === email) {
       return true;
     }
   }
   return false;
-}
+};
 
 /**
  * check if the password entered by the user is in the object
  * users to allow the user login in or not
  */
 const checkPasswordIfExists = function (password) {
-  for (keys of Object.keys(users)) {
-    if (users[keys]['password'] === password) {
+  const hashedPassword = bcrypt(password, 10);
+  for (const keys of Object.keys(users)) {
+    if (bcrypt.compareSync(users[keys]['password']), hashedPassword) {
       return true;
     }
   }
   return false;
-}
+};
 
 /**
  * This function will create a random
@@ -210,11 +174,7 @@ app.get("/", (req, res) => {
   if (!user) {
     res.redirect("/login");
   }
-<<<<<<< 4aee4c21d503fb560117d781ca1210a09201add7
-  const urlsOfUser =  getUrlsOfUserIfExist(userID);
-=======
   const urlsOfUser = getUrlsOfUserIfExist(userID);
->>>>>>> Lint code
   const templateVars = {
     user, urls: urlsOfUser
   };
@@ -226,49 +186,27 @@ app.get("/", (req, res) => {
 /**
  * Showing list of urls via the template urls_index
  */
-<<<<<<< 4aee4c21d503fb560117d781ca1210a09201add7
-app.get("/urls", (req, res) =>{
-  const userID = req.cookies['user_id'];
-  console.log("userID ", userID);
-  let user;
-  if(userID){
-=======
 app.get("/urls", (req, res) => {
   const userID = req.cookies['user_id'];
-  console.log("userID ", userID);
   let user;
   if (userID) {
->>>>>>> Lint code
     user = checkIfUserExists(userID);
   }
   // if(!user){
   //   return res.status(403).send(`You have to Register first`);
   // }
   const urlsOfUser = getUrlsOfUserIfExist(userID);
-<<<<<<< 4aee4c21d503fb560117d781ca1210a09201add7
-  
-  const templateVars = {
-    user, urls: urlsOfUser
-  };
-  console.log("templateVars ",templateVars);
-=======
 
   const templateVars = {
     user, urls: urlsOfUser
   };
-  console.log("templateVars ", templateVars);
->>>>>>> Lint code
   res.render("urls_index", templateVars);
 });
 
 /**
  * Route to logout
  */
-<<<<<<< 4aee4c21d503fb560117d781ca1210a09201add7
- app.post("/logout", (req, res) => {
-=======
 app.post("/logout", (req, res) => {
->>>>>>> Lint code
   res.clearCookie("user_id");
   res.redirect("/urls");
 });
@@ -276,29 +214,6 @@ app.post("/logout", (req, res) => {
 /**
  * Route to POST register
  */
-<<<<<<< 4aee4c21d503fb560117d781ca1210a09201add7
- app.post("/register",(req, res) =>{
-   const email = req.body.email;
-   const password = req.body.password;
-   // Ask the user to fill in the empty zones.
-   if (!email || !password) {
-     return res
-     .status(403)
-     .send(`email or password is missing". Please <a href='/register'> Fill in empty areas</a>`)
-   }
-
-   if (checkEmailAlreadyExists(email)) {
-     return res.status(403).send(`This email alrady exists". Please <a href='/register'> try another one</a>`)
-   }
-   const userID1 = generateRandomString();
-   const userID2 = generateRandomString();
-   const userID = userID1 + userID2;
-   const user = { userID, email, password };
-   users[userID] = user;
-   res.cookie('user_id', userID);
-   res.redirect('/urls');
- })
-=======
 app.post("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
@@ -306,21 +221,21 @@ app.post("/register", (req, res) => {
   if (!email || !password) {
     return res
       .status(403)
-      .send(`email or password is missing". Please <a href='/register'> Fill in empty areas</a>`)
+      .send(`email or password is missing". Please <a href='/register'> Fill in empty areas</a>`);
   }
 
   if (checkEmailAlreadyExists(email)) {
-    return res.status(403).send(`This email alrady exists". Please <a href='/register'> try another one</a>`)
+    return res.status(403).send(`This email alrady exists". Please <a href='/register'> try another one</a>`);
   }
   const userID1 = generateRandomString();
   const userID2 = generateRandomString();
   const userID = userID1 + userID2;
-  const user = { userID, email, password };
+  const hashedPassword = bcrypt.hashSync(password, 10);
+  const user = { userID, email, hashedPassword };
   users[userID] = user;
   res.cookie('user_id', userID);
   res.redirect('/urls');
-})
->>>>>>> Lint code
+});
 
 /**
  * Route to POST login
@@ -330,29 +245,24 @@ app.post("/login", (req, res) => {
   const password = req.body.password;
   // Ask the user to fill in the empty zones.
   if (!email || !password) {
-    return res.status(403).send(`email or password is missing". Please <a href='/register'> Fill in empty areas</a>`)
+    return res.status(403).send(`email or password is missing". Please <a href='/register'> Fill in empty areas</a>`);
   }
-  // check if the email or the password is not in the database 
-  // the user has to login with another email 
+  // check if the email or the password is not in the database
+  // the user has to login with another email
   // and or another password that match email and password in database
   if (!checkEmailAlreadyExists(email) || !checkPasswordIfExists(password)) {
-    return res.status(403).send(`email or password does not match". Please <a href='/login'> try again</a>`)
+    return res.status(403).send(`email or password does not match". Please <a href='/login'> try again</a>`);
   }
   const userID = getUserID(email, password);
-  console.log("userID inside post login ", userID);
   res.cookie('user_id', userID);
   res.redirect('/urls');
-})
+});
 
 
 /**
  * Route to GET register
  */
-<<<<<<< 4aee4c21d503fb560117d781ca1210a09201add7
-app.get("/register", (req, res) =>{
-=======
 app.get("/register", (req, res) => {
->>>>>>> Lint code
   const userID = req.cookies['user_id'];
   let user;
   if (userID) {
@@ -365,31 +275,9 @@ app.get("/register", (req, res) => {
   if (!user) {
     res.render('register', templateVars);
   }
-  res.redirect('/urls');
-<<<<<<< 4aee4c21d503fb560117d781ca1210a09201add7
-=======
-});
 
-/**
- * Route to GET login
- */
-app.get("/login", (req, res) => {
-  const userID = req.cookies['user_id'];
-  let user;
-  if (userID) {
-    user = checkIfUserExists(userID);
-  }
-  const urlsOfUser = getUrlsOfUserIfExist(userID);
-  const templateVars = {
-    user, urls: urlsOfUser
-  };
-  if (!user) {
-    res.render('login', templateVars);
-  }
   res.redirect('/urls');
->>>>>>> Lint code
 });
-
 
 /**
  * Route to GET login
@@ -427,15 +315,9 @@ app.post("/urls", (req, res) => {
   if (req.body.longURL.trim() === "") {
     res.send("Must be not empty");
   }
-<<<<<<< 4aee4c21d503fb560117d781ca1210a09201add7
-  
-  const longURL = req.body.longURL;
-  const userUrl = {longURL, userID};
-=======
 
   const longURL = req.body.longURL;
   const userUrl = { longURL, userID };
->>>>>>> Lint code
   urlDatabase[shortURL] = userUrl;
   // redirect shortURL to see its longURL
   res.redirect(`/urls/${shortURL}`);
@@ -471,9 +353,6 @@ app.get("/urls/new", (req, res) => {
   const templateVars = {
     user, urls: urlDatabase
   };
-
-  console.log("templateVars", templateVars);
-
   res.render("urls_new", templateVars);
 });
 
