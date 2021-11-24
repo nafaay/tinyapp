@@ -24,7 +24,6 @@ app.use(cookieSession({
  */
 const bcrypt = require('bcryptjs');
 
-
 /**
  * Set ejs as the view engine
  */
@@ -51,13 +50,10 @@ const urlDatabase = {
   }
 };
 
-
 /**
  * Object simulating a database of users.
  * each user id is an object of {id, email, password}
  */
-
-
 const users = {
   "userRandomID": {
     id: "userRandomID",
@@ -313,18 +309,7 @@ app.get("/login", (req, res) => {
   else{
     res.render('login', templateVars);
   }
-
-  // const urlsOfUser = getUrlsOfUserIfExist(userID);
-  // const templateVars = {
-  //   user, urls: urlsOfUser
-  // };
-  // if (!user) {
-  //   res.render('login', templateVars);
-  // }
 });
-
-
-
 
 /**
  * Route to POST login
@@ -443,15 +428,29 @@ app.get("/urls/new", (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {
   const userID = req.session.user_id;
   const user = checkIfUserExists(userID);
+  const shortURL = req.params.shortURL;
+  let longURL;
   if (!user) {
     res.status(403).send("Not Authorized");
   }
-  const shortURL = req.params.shortURL;
-  const longURL = urlDatabase[shortURL]['longURL'];
-  const templateVars = {
-    user, shortURL, longURL
-  };
-  res.render("urls_show", templateVars);
+  else{
+    // check if shortURL belongs to this user
+    if (urlDatabase[shortURL]){
+      if (urlDatabase[shortURL].userID === userID) {
+        longURL = urlDatabase[shortURL].longURL;
+        const templateVars = {
+          user, shortURL, longURL
+        };
+        res.render("urls_show", templateVars);
+      }
+      else {
+        res.status(403).send("You do not have the rights to see this URL");
+      }
+    }
+    else{
+      res.status(403).send(`this URL does not exist . Please <a href='/urls'> return`);
+    }
+  }
 });
 
 
