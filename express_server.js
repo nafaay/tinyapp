@@ -85,11 +85,16 @@ const getUserByEmail = function(email){
       user.id = users[key].id;
       user.email = users[key].email;
       user.password = users[key].password;
-      console.log(user)
       return user;
     }
   }
   return null;
+}
+
+const emailAndOrPasswordDoNotMatch = function (response) {
+  return response
+    .status(403)
+    .send(`email and/or password do/does not match. Please <a href='/login'> try again</a>`);
 }
 
 /**
@@ -104,28 +109,16 @@ const getUserById = function (id) {
       user.id = users[key].id;
       user.email = users[key].email;
       user.password = users[key].password;
-      console.log(user)
       return user;
     }
   }
   return null;
 }
 
-
-const getUserID = function (email, password) {
-  for (const key of Object.keys(users)) {
-    if (users[key]['email'] === email && users[key]['password'] === password) {
-      return key;
-    }
-  }
-  return null;
-};
-///////////////////////////////////////////////
-
 /**
  * given the user id return the shortURL
  * with its longURL'(s) and userID if not return null
- */
+*/
 
 const getUrlsOfUserIfExist = function (userID) {
   const objUrlsUser = {};
@@ -137,22 +130,6 @@ const getUrlsOfUserIfExist = function (userID) {
     }
   }
   return objUrlsUser;
-};
-///////////////////////////////////////////////
-
-/**
- * return a valid user if exists if not return null
- */
-const checkIfUserExists = function (userID) {
-  let user = {};
-  if (users.hasOwnProperty(userID)) {
-    const email = users[userID].email;
-    const password = users[userID].password;
-    user = { userID, email, password };
-  } else {
-    user = null;
-  }
-  return user;
 };
 
 /**
@@ -167,10 +144,6 @@ const checkEmailAlreadyExists = function (email) {
   }
   return false;
 };
-
-
-
-
 
 /**
  * This function will create a random
@@ -207,19 +180,13 @@ const getRndInteger = function (min, max) {
 app.get("/", (req, res) => {
   const userID = req.session.user_id;
   // const userID = req.session.userID;
-  const user = checkIfUserExists(userID);
+  const user = getUserById(userID);
   if (!user) {
     res.redirect("/login");
   }
   else{
     res.redirect("/urls");
   }
-  // const urlsOfUser = getUrlsOfUserIfExist(userID);
-  // const templateVars = {
-  //   user, urls: urlsOfUser
-  // };
-
-  // res.render("urls_index", templateVars);
 });
 
 
@@ -233,7 +200,7 @@ app.get("/urls", (req, res) => {
   let urls = null;
   if (user_id) {
     user = getUserById(user_id);
-    urls = getUrlsOfUserIfExist(user.id);
+    urls = getUrlsOfUserIfExist(user_id);
   }
   // template to be sent to urls_index if user exists 
   // if not redirect to login
@@ -267,7 +234,7 @@ app.post("/register", (req, res) => {
   if (!email || !password) {
     return res
       .status(403)
-      .send(`email or password is missing". Please <a href='/register'> Fill in empty areas</a>`);
+      .send(`email or password is missing. Please <a href='/register'> Fill in empty areas</a>`);
   }
 
   if (checkEmailAlreadyExists(email)) {
@@ -298,7 +265,7 @@ app.get("/login", (req, res) => {
   let urls = null;
   if(user_id){
     user = getUserById(user_id);
-    urls = getUrlsOfUserIfExist(user.id);
+    urls = getUrlsOfUserIfExist(user_id);
   }
   const templateVars = {
     user, urls
@@ -318,8 +285,8 @@ app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   // Ask the user to fill in the empty zones.
-  if (!email || !password) {
-    return res.status(403).send(`email or password is missing". Please <a href='/register'> Fill in empty areas</a>`);
+  if (email.trim() === "" || password.trim() === "") {
+    return res.status(403).send(`email or password are missing". Please <a href='/register'> Fill in empty areas</a>`);
   }
   const user = getUserByEmail(email);
   if(user){
@@ -330,12 +297,12 @@ app.post("/login", (req, res) => {
           res.redirect('/urls');
         }
         else{
-          return res.status(403).send(`email or password does not match". Please <a href='/login'> try again</a>`);
+          emailAndOrPasswordDoNotMatch(res);
         }
      });
   }
   else{
-      return res.status(403).send(`email or password does not match". Please <a href='/login'> try again</a>`);
+    emailAndOrPasswordDoNotMatch(res);
   }
 });
 
@@ -348,7 +315,7 @@ app.get("/register", (req, res) => {
   let user = null;
   let  urlsOfUser = null;
   if (userID) {
-    user = checkIfUserExists(userID);
+    user = getUserById(userID);
     urlsOfUser  = getUrlsOfUserIfExist(userID);
   }
   const templateVars = {
@@ -368,7 +335,7 @@ app.get("/register", (req, res) => {
  */
 app.post("/urls", (req, res) => {
   const userID = req.session.user_id;
-  const user = checkIfUserExists(userID);
+  const user = getUserById(userID);
   if (!user) {
     res.status(403).send("Not Authorized");
   }
@@ -410,9 +377,9 @@ app.post("/urls/:shortURL/delete", (req, res) => {
  */
 app.get("/urls/new", (req, res) => {
   const userID = req.session.user_id;
-  const user = checkIfUserExists(userID);
+  const user = getUserById(userID);
   if (!user) {
-    res.status(403).send("Not Authorized");
+    res.redirect('/urls');
   }
   const templateVars = {
     user, urls: urlDatabase
@@ -427,7 +394,7 @@ app.get("/urls/new", (req, res) => {
  */
 app.get("/urls/:shortURL", (req, res) => {
   const userID = req.session.user_id;
-  const user = checkIfUserExists(userID);
+  const user = getUserById(userID);
   const shortURL = req.params.shortURL;
   let longURL;
   if (!user) {
@@ -461,6 +428,9 @@ app.get("/urls/:shortURL", (req, res) => {
  */
 app.post("/urls/:shortURL", (req, res) => {
   const longURL = req.body.longURL;
+  if(longURL.trim() === ""){
+    return;
+  }
   const shortURL = req.params.shortURL;
   urlDatabase[shortURL]['longURL'] = longURL;
   res.redirect("/urls");
