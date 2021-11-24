@@ -10,11 +10,6 @@ const morgan = require("morgan");
 const app = express();
 const PORT = 8080; // default port 8080
 /**
- *  to encrypt passwords
- */
-
-const bcrypt = require('bcryptjs');
-/**
  * to use cookies
  */
 const cookieSession = require('cookie-session');
@@ -22,7 +17,15 @@ app.use(cookieSession({
   name: 'session',
   keys: ['key1', 'key2'],
   maxAge: 24 * 60 * 60 * 1000 // 24 hours
-}))/**
+}))
+
+/**
+ *  to encrypt passwords
+ */
+const bcrypt = require('bcryptjs');
+
+
+/**
  * Set ejs as the view engine
  */
 app.set("view engine", "ejs");
@@ -33,7 +36,6 @@ app.use(morgan('dev'));
  */
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({ extended: false }));
-
 
 /**
  * Object simulating a database of urls to work on.
@@ -61,6 +63,9 @@ const users = {
     id: "userRandomID",
     email: "user@example.com",
     // password: "purple-monkey-dinosaur"
+    // here we encrypt password like that just to be able to make comparison
+    // when the user enters one, in real world the passwords are encrypted
+    // on the registartion and savec encrypted in the database
      password: bcrypt.hashSync("123", 10)
   },
   "user2RandomID": {
