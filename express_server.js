@@ -6,9 +6,9 @@
  * Using express to communicate between client and server
  */
 const express = require("express");
+const morgan = require("morgan");
 const app = express();
 const PORT = 8080; // default port 8080
-
 /**
  *  to encrypt passwords
  */
@@ -21,30 +21,23 @@ const cookieSession = require('cookie-session');
 app.use(cookieSession({
   name: 'session',
   keys: ['key1', 'key2'],
-
-  // Cookie Options
   maxAge: 24 * 60 * 60 * 1000 // 24 hours
 }))/**
  * Set ejs as the view engine
  */
 app.set("view engine", "ejs");
-
+app.use(morgan('dev'));
 /**
  * bodyParser is a middleware that will help us
  * to read data buffer when using POST requests
  */
 const bodyParser = require("body-parser");
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.urlencoded({ extended: false }));
 
 
 /**
  * Object simulating a database of urls to work on.
- * '"short urls" : "long urls"'
  */
-// const urlDatabase = {
-//   "b2xVn2": "http://www.lighthouselabs.ca",
-//   "9sm5xK": "http://www.google.com"
-// };
 const urlDatabase = {
   "b2xVn2": {
     longURL: "http://www.lighthouselabs.ca",
@@ -62,18 +55,61 @@ const urlDatabase = {
  * each user id is an object of {id, email, password}
  */
 
+
 const users = {
   "userRandomID": {
     id: "userRandomID",
     email: "user@example.com",
-    password: "purple-monkey-dinosaur"
+    // password: "purple-monkey-dinosaur"
+     password: bcrypt.hashSync("123", 10)
   },
   "user2RandomID": {
     id: "user2RandomID",
     email: "user2@example.com",
-    password: "dishwasher-funk"
+    // password: "dishwasher-funk"
+    password: bcrypt.hashSync("456", 10)
   }
 };
+
+/**
+ *  given the email from return
+ *  the user if exists otherwise return null;
+ */
+
+const getUserByEmail = function(email){
+  const user = {};
+
+  for(const key in users){
+    if(email === users[key].email){
+      user.id = users[key].id;
+      user.email = users[key].email;
+      user.password = users[key].password;
+      console.log(user)
+      return user;
+    }
+  }
+  return null;
+}
+
+/**
+ *  given the id from the cookie session 
+ *  the user if exists otherwise return null;
+ */
+
+const getUserById = function (id) {
+  const user = {};
+  for (const key in users) {
+    if (id === users[key].id) {
+      user.id = users[key].id;
+      user.email = users[key].email;
+      user.password = users[key].password;
+      console.log(user)
+      return user;
+    }
+  }
+  return null;
+}
+
 
 const getUserID = function (email, password) {
   for (const key of Object.keys(users)) {
@@ -81,23 +117,27 @@ const getUserID = function (email, password) {
       return key;
     }
   }
-  return undefined;
+  return null;
 };
+///////////////////////////////////////////////
+
 /**
- * return all short and long urls of user if they exist
- * if the user has no urls reurn {}
+ * given the user id return the shortURL
+ * with its longURL'(s) and userID if not return null
  */
+
 const getUrlsOfUserIfExist = function (userID) {
   const objUrlsUser = {};
   for (const key of Object.keys(urlDatabase)) {
-    if (urlDatabase[key]['userID'] === userID) {
+    if (urlDatabase[key].userID === userID) {
       const shortURL = key;
-      const longURL = urlDatabase[key]['longURL'];
+      const longURL = urlDatabase[key].longURL;
       objUrlsUser[shortURL] = longURL;
     }
   }
   return objUrlsUser;
 };
+///////////////////////////////////////////////
 
 /**
  * return a valid user if exists if not return null
@@ -127,19 +167,9 @@ const checkEmailAlreadyExists = function (email) {
   return false;
 };
 
-/**
- * check if the password entered by the user is in the object
- * users to allow the user login in or not
- */
-const checkPasswordIfExists = function (password) {
-  const hashedPassword = bcrypt.hashSync(password, 10);
-  for (const keys of Object.keys(users)) {
-    if (bcrypt.compareSync(users[keys]['password']), hashedPassword) {
-      return true;
-    }
-  }
-  return false;
-};
+
+
+
 
 /**
  * This function will create a random
@@ -174,17 +204,21 @@ const getRndInteger = function (min, max) {
 };
 
 app.get("/", (req, res) => {
-  const userID = req.session.userID;
+  const userID = req.session.user_id;
+  // const userID = req.session.userID;
   const user = checkIfUserExists(userID);
   if (!user) {
     res.redirect("/login");
   }
-  const urlsOfUser = getUrlsOfUserIfExist(userID);
-  const templateVars = {
-    user, urls: urlsOfUser
-  };
+  else{
+    res.redirect("/urls");
+  }
+  // const urlsOfUser = getUrlsOfUserIfExist(userID);
+  // const templateVars = {
+  //   user, urls: urlsOfUser
+  // };
 
-  res.render("urls_index", templateVars);
+  // res.render("urls_index", templateVars);
 });
 
 
@@ -192,27 +226,33 @@ app.get("/", (req, res) => {
  * Showing list of urls via the template urls_index
  */
 app.get("/urls", (req, res) => {
-  const userID = req.session.userID;
-  let user;
-  if (userID) {
-    user = checkIfUserExists(userID);
+  const user_id = req.session.user_id;
+  // get the user if he exists or null if not
+  let user = null;
+  let urls = null;
+  if (user_id) {
+    user = getUserById(user_id);
+    urls = getUrlsOfUserIfExist(user.id);
   }
-  // if(!user){
-  //   return res.status(403).send(`You have to Register first`);
-  // }
-  const urlsOfUser = getUrlsOfUserIfExist(userID);
-
+  // template to be sent to urls_index if user exists 
+  // if not redirect to login
   const templateVars = {
-    user, urls: urlsOfUser
+    user, urls
   };
-  res.render("urls_index", templateVars);
+  if (user) {
+    res.render("urls_index", templateVars);
+  }
+  else {
+    res.render('login', templateVars);
+  }
 });
 
 /**
  * Route to logout
  */
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
+  // if the user logs out we destroy the cookie session
+  req.session = null;
   res.redirect("/urls");
 });
 
@@ -235,12 +275,51 @@ app.post("/register", (req, res) => {
   const userID1 = generateRandomString();
   const userID2 = generateRandomString();
   const userID = userID1 + userID2;
-  const hashedPassword = bcrypt.hashSync(password, 10);
-  const user = { userID, email, hashedPassword };
-  users[userID] = user;
-  req.session.user_id = userID;
-  res.redirect('/urls');
+  // we hash the password once the user registers
+  bcrypt.hash(password, 10, (err, hash) => {
+    // Store hash in your password DB.
+    const user = { userID, email, hash };
+    users[userID] = user;
+    req.session.user_id = userID;
+    res.redirect('/urls');
+  });
 });
+
+/**
+ * Route to GET login
+ */
+app.get("/login", (req, res) => {
+
+  // get user_id from the cookie session if it exists
+  const user_id = req.session.user_id;
+  // get the user if he exists or null if not
+  let user = null;
+  let urls = null;
+  if(user_id){
+    user = getUserById(user_id);
+    urls = getUrlsOfUserIfExist(user.id);
+  }
+  const templateVars = {
+    user, urls
+  };
+  if (user){
+    res.redirect('/urls');
+  }
+  else{
+    res.render('login', templateVars);
+  }
+
+  // const urlsOfUser = getUrlsOfUserIfExist(userID);
+  // const templateVars = {
+  //   user, urls: urlsOfUser
+  // };
+  // if (!user) {
+  //   res.render('login', templateVars);
+  // }
+});
+
+
+
 
 /**
  * Route to POST login
@@ -252,15 +331,22 @@ app.post("/login", (req, res) => {
   if (!email || !password) {
     return res.status(403).send(`email or password is missing". Please <a href='/register'> Fill in empty areas</a>`);
   }
-  // check if the email or the password is not in the database
-  // the user has to login with another email
-  // and or another password that match email and password in database
-  if (!checkEmailAlreadyExists(email) || !checkPasswordIfExists(password)) {
-    return res.status(403).send(`email or password does not match". Please <a href='/login'> try again</a>`);
+  const user = getUserByEmail(email);
+  if(user){
+     bcrypt.compare(password, user.password, (err, result) =>{
+        if (result) {
+          // the email and password match ==> set cookie session and redirect
+          req.session.user_id = user.id;
+          res.redirect('/urls');
+        }
+        else{
+          return res.status(403).send(`email or password does not match". Please <a href='/login'> try again</a>`);
+        }
+     });
   }
-  const userID = getUserID(email, password);
-  req.session.userID = userID;
-  res.redirect('/urls');
+  else{
+      return res.status(403).send(`email or password does not match". Please <a href='/login'> try again</a>`);
+  }
 });
 
 
@@ -268,7 +354,6 @@ app.post("/login", (req, res) => {
  * Route to GET register
  */
 app.get("/register", (req, res) => {
-  console.log("get register");
   const userID = req.session.user_id;
   let user = null;
   let  urlsOfUser = null;
@@ -279,33 +364,13 @@ app.get("/register", (req, res) => {
   const templateVars = {
     user, urls: urlsOfUser
   };
-  console.log(user);
   if (!user) {
-    console.log("xxx");
     res.render('register', templateVars);
   }
 
   res.redirect('/urls');
 });
 
-/**
- * Route to GET login
- */
-app.get("/login", (req, res) => {
-  const userID = req.session.user_id;
-  let user;
-  if (userID) {
-    user = checkIfUserExists(userID);
-  }
-  const urlsOfUser = getUrlsOfUserIfExist(userID);
-  const templateVars = {
-    user, urls: urlsOfUser
-  };
-  if (!user) {
-    res.render('login', templateVars);
-  }
-  res.redirect('/urls');
-});
 
 
 /**
