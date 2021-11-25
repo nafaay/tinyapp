@@ -1,8 +1,12 @@
 /**@author: Youssef Nafaa < nafaayoussef@gmail.com>
  * @project: tinyapp for bootcamp at lighthouse lab Canada
  * @date: November 2021
+**/
 
-/**
+// helper that contains our helper functions
+const { getUserByEmail, getUserById } = require('./helper');
+
+ /**  
  * Using express to communicate between client and server
  */
 const express = require("express");
@@ -76,24 +80,6 @@ const users = {
   }
 };
 
-/**
- *  given the email from return
- *  the user if exists otherwise return null;
- */
-
-const getUserByEmail = function(email){
-  const user = {};
-
-  for(const key in users){
-    if(email === users[key].email){
-      user.id = users[key].id;
-      user.email = users[key].email;
-      user.password = users[key].password;
-      return user;
-    }
-  }
-  return null;
-}
 
 const emailAndOrPasswordDoNotMatch = function (resp) {
   return resp
@@ -107,40 +93,28 @@ const zonesEmpty = function(resp){
     .send(`email or password is missing. Please <a href='/register'> Fill in empty areas</a>`);
 }
 
-const emailAlreadyExists =function(resp){
+const emailAlreadyExists = function(resp){
   return resp
     .status(403)
     .send(`This email alrady exists". Please <a href='/register'> try another one</a>`);
-  }
-
-/**
- *  given the id from the cookie session 
- *  the user if exists otherwise return null;
- */
-
-const getUserById = function (id) {
-  const user = {};
-  console.log("users", users);
-  for (const key in users) {
-    if (id === users[key].id) {
-      user.id = users[key].id;
-      user.email = users[key].email;
-      user.password = users[key].password;
-      return user;
-    }
-  }
-  return null;
 }
+
+const missingEmailAndOrPassword = function(resp){
+  return resp
+    .status(403)
+    .send(`email and/or password are missing". Please <a href='/register'> Fill in empty areas</a>`);
+}
+
 
 /**
  * given the user id return the shortURL
- * with its longURL'(s) and userID if not return null
+ * with its longURL'(s) if not return null
 */
 
-const getUrlsOfUserIfExist = function (userID) {
+const urlsForUser = function (id) {
   const objUrlsUser = {};
   for (const key of Object.keys(urlDatabase)) {
-    if (urlDatabase[key].userID === userID) {
+    if (urlDatabase[key].userID === id) {
       const shortURL = key;
       const longURL = urlDatabase[key].longURL;
       objUrlsUser[shortURL] = longURL;
@@ -167,20 +141,20 @@ const checkEmailAlreadyExists = function (email) {
  * alphanumeric string to simulate generating a shortURL
  */
 const generateRandomString = function () {
-  let str = "";// will contain the final random 6 alphanum chars
-  let rd; // get number between 0 and 9, or number between 65 and 90
-  // or number between 97 and 122 to simulate numbers, uppercase and
-  // lowecase characters
-  let chx; // get a number between 0 and 2
+  let str = ""; // will contain the final random 6 alphanum chars
+  let rd;       // get number between 0 and 9, or number between 65 and 90
+                // or number between 97 and 122 to simulate numbers, uppercase and
+                // lowecase characters
+  let chx;      // get a number between 0 and 2
   for (let i = 1; i <= 6; i++) {
     chx = getRndInteger(0, 3);
     if (chx === 0) {
-      // We use Math.floor because to get only integers
+                // We use Math.floor to get only integers
       rd = getRndInteger(0, 10); // number between 0 and 9
       str += rd;
     } else if (chx === 1) {
       rd = getRndInteger(65, 91);
-      // method will convert Unicode values to characters
+                                      // method will convert Unicode values to characters
       str += String.fromCharCode(rd); // uppercase char
     } else if (chx === 2) {
       rd = getRndInteger(97, 123);
@@ -197,7 +171,7 @@ const getRndInteger = function (min, max) {
 app.get("/", (req, res) => {
   const userID = req.session.user_id;
   // const userID = req.session.userID;
-  const user = getUserById(userID);
+  const user = getUserById(userID, users);
   if (!user) {
     res.redirect("/login");
   }
@@ -216,10 +190,9 @@ app.get("/urls", (req, res) => {
   let user = null;
   let urls = null;
   if (user_id) {
-    user = getUserById(user_id);
-    urls = getUrlsOfUserIfExist(user_id);
+    user = getUserById(user_id, users);
+    urls = urlsForUser(user_id);
   }
-  console.log("user ", user);
   // template to be sent to urls_index if user exists 
   // if not redirect to login
   const templateVars = {
@@ -261,7 +234,6 @@ app.post("/register", (req, res) => {
     const id = userID1 + userID2;
     // we hash the password once the user registers
     bcrypt.hash(password, 10, (err, hash) => {
-      // Store hash in your password DB.
       const user = { id, email, hash };
       users[id] = user;
       req.session.user_id = id;
@@ -281,8 +253,8 @@ app.get("/login", (req, res) => {
   let user = null;
   let urls = null;
   if(user_id){
-    user = getUserById(user_id);
-    urls = getUrlsOfUserIfExist(user_id);
+    user = getUserById(user_id, users);
+    urls = urlsForUser(user_id);
   }
   const templateVars = {
     user, urls
@@ -303,9 +275,9 @@ app.post("/login", (req, res) => {
   const password = req.body.password;
   // Ask the user to fill in the empty zones.
   if (email.trim() === "" || password.trim() === "") {
-    return res.status(403).send(`email or password are missing". Please <a href='/register'> Fill in empty areas</a>`);
+    missingEmailAndOrPassword(res);
   }
-  const user = getUserByEmail(email);
+  const user = getUserByEmail(email, users);
   if(user){
      bcrypt.compare(password, user.password, (err, result) =>{
         if (result) {
@@ -332,8 +304,8 @@ app.get("/register", (req, res) => {
   let user = null;
   let  urlsOfUser = null;
   if (userID) {
-    user = getUserById(userID);
-    urlsOfUser  = getUrlsOfUserIfExist(userID);
+    user = getUserById(userID, users);
+    urlsOfUser  = urlsForUser(userID);
   }
   const templateVars = {
     user, urls: urlsOfUser
@@ -353,7 +325,7 @@ app.get("/register", (req, res) => {
  */
 app.post("/urls", (req, res) => {
   const userID = req.session.user_id;
-  const user = getUserById(userID);
+  const user = getUserById(userID, users);
   if (!user) {
     res.status(403).send("Not Authorized");
   }
@@ -390,12 +362,11 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 /**
  * GET route to show the form to create an URL
  * Attention: This must be above any specific route (/urls/:id)
- * If not Express will think that /new is a specific route like
- * /:shortURL
+ * If not Express will think that /new is a specific route like (/:shortURL)
  */
 app.get("/urls/new", (req, res) => {
   const userID = req.session.user_id;
-  const user = getUserById(userID);
+  const user = getUserById(userID, users);
   if (!user) {
     res.redirect('/urls');
   }
@@ -412,7 +383,7 @@ app.get("/urls/new", (req, res) => {
  */
 app.get("/urls/:shortURL", (req, res) => {
   const userID = req.session.user_id;
-  const user = getUserById(userID);
+  const user = getUserById(userID, users);
   const shortURL = req.params.shortURL;
   let longURL;
   if (!user) {
@@ -463,7 +434,9 @@ app.get("/u/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   const longURL = urlDatabase[shortURL];
   if (!longURL) {
-    return res.status(404).send(`The url ${shortURL} does not exist`);
+    return res
+            .status(404)
+            .send(`The url ${shortURL} does not exist`);
   } else {
     const longURL = urlDatabase[shortURL]['longURL'];
     res.redirect(longURL);
