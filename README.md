@@ -19,6 +19,3 @@ nodemon
 # How to start
 Run npm install command will install the dependencies.
 npm start will run the app automatically with the help of nodemon
-
-
-
