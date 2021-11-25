@@ -6,8 +6,11 @@
  * Using express to communicate between client and server
  */
 const express = require("express");
-const morgan = require("morgan");
 const app = express();
+/**
+ * morgan to detect errors without killing the server each time
+ */
+const morgan = require("morgan");
 const PORT = 8080; // default port 8080
 /**
  * to use cookies
@@ -20,7 +23,7 @@ app.use(cookieSession({
 }))
 
 /**
- *  to encrypt passwords
+ *  to be able to encrypt passwords
  */
 const bcrypt = require('bcryptjs');
 
@@ -34,6 +37,7 @@ app.use(morgan('dev'));
  * to read data buffer when using POST requests
  */
 const bodyParser = require("body-parser");
+// const { response } = require("express");
 app.use(bodyParser.urlencoded({ extended: false }));
 
 /**
@@ -91,11 +95,23 @@ const getUserByEmail = function(email){
   return null;
 }
 
-const emailAndOrPasswordDoNotMatch = function (response) {
-  return response
+const emailAndOrPasswordDoNotMatch = function (resp) {
+  return resp
     .status(403)
     .send(`email and/or password do/does not match. Please <a href='/login'> try again</a>`);
 }
+
+const zonesEmpty = function(resp){
+  return resp
+    .status(403)
+    .send(`email or password is missing. Please <a href='/register'> Fill in empty areas</a>`);
+}
+
+const emailAlreadyExists =function(resp){
+  return resp
+    .status(403)
+    .send(`This email alrady exists". Please <a href='/register'> try another one</a>`);
+  }
 
 /**
  *  given the id from the cookie session 
@@ -104,6 +120,7 @@ const emailAndOrPasswordDoNotMatch = function (response) {
 
 const getUserById = function (id) {
   const user = {};
+  console.log("users", users);
   for (const key in users) {
     if (id === users[key].id) {
       user.id = users[key].id;
@@ -202,6 +219,7 @@ app.get("/urls", (req, res) => {
     user = getUserById(user_id);
     urls = getUrlsOfUserIfExist(user_id);
   }
+  console.log("user ", user);
   // template to be sent to urls_index if user exists 
   // if not redirect to login
   const templateVars = {
@@ -231,26 +249,25 @@ app.post("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   // Ask the user to fill in the empty zones.
-  if (!email || !password) {
-    return res
-      .status(403)
-      .send(`email or password is missing. Please <a href='/register'> Fill in empty areas</a>`);
+  if (email.trim() === "" || password.trim() === "") {
+    zonesEmpty(res);
   }
-
-  if (checkEmailAlreadyExists(email)) {
-    return res.status(403).send(`This email alrady exists". Please <a href='/register'> try another one</a>`);
+  else if (checkEmailAlreadyExists(email)) {
+    emailAlreadyExists(res);
   }
-  const userID1 = generateRandomString();
-  const userID2 = generateRandomString();
-  const userID = userID1 + userID2;
-  // we hash the password once the user registers
-  bcrypt.hash(password, 10, (err, hash) => {
-    // Store hash in your password DB.
-    const user = { userID, email, hash };
-    users[userID] = user;
-    req.session.user_id = userID;
-    res.redirect('/urls');
-  });
+  else{
+    const userID1 = generateRandomString();
+    const userID2 = generateRandomString();
+    const id = userID1 + userID2;
+    // we hash the password once the user registers
+    bcrypt.hash(password, 10, (err, hash) => {
+      // Store hash in your password DB.
+      const user = { id, email, hash };
+      users[id] = user;
+      req.session.user_id = id;
+      res.redirect('/urls');
+    });
+  }
 });
 
 /**
@@ -324,8 +341,9 @@ app.get("/register", (req, res) => {
   if (!user) {
     res.render('register', templateVars);
   }
-
-  res.redirect('/urls');
+  else{
+    res.redirect('/urls');
+  }
 });
 
 
