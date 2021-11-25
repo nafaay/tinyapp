@@ -4,7 +4,7 @@
 **/
 
 // helper that contains our helper functions
-const { 
+const {
   getUserByEmail,
   getUserById,
   urlsForUser,
@@ -91,6 +91,7 @@ const users = {
   }
 };
 
+// GET routes
 
 app.get("/", (req, res) => {
   const userID = req.session.user_id;
@@ -129,95 +130,6 @@ app.get("/urls", (req, res) => {
   }
 });
 
-/**
- * Route to logout
- */
-app.post("/logout", (req, res) => {
-  // if the user logs out we destroy the cookie session
-  req.session = null;
-  res.redirect("/urls");
-});
-
-/**
- * Route to POST register
- */
-app.post("/register", (req, res) => {
-  const email = req.body.email;
-  const password = req.body.password;
-  // Ask the user to fill in the empty zones.
-  if (email.trim() === "" || password.trim() === "") {
-    zonesEmpty(res);
-  }
-  else if (checkEmailAlreadyExists(email, users)) {
-    emailAlreadyExists(res);
-  }
-  else{
-    const userID1 = generateRandomString();
-    const userID2 = generateRandomString();
-    const id = userID1 + userID2;
-    // we hash the password once the user registers
-    bcrypt.hash(password, 10, (err, hash) => {
-      const user = { id, email, hash };
-      users[id] = user;
-      req.session.user_id = id;
-      res.redirect('/urls');
-    });
-  }
-});
-
-/**
- * Route to GET login
- */
-app.get("/login", (req, res) => {
-
-  // get user_id from the cookie session if it exists
-  const user_id = req.session.user_id;
-  // get the user if he exists or null if not
-  let user = null;
-  let urls = null;
-  if(user_id){
-    user = getUserById(user_id, users);
-    urls = urlsForUser(user_id, urlDatabase);
-  }
-  const templateVars = {
-    user, urls
-  };
-  if (user){
-    res.redirect('/urls');
-  }
-  else{
-    res.render('login', templateVars);
-  }
-});
-
-/**
- * Route to POST login
- */
-app.post("/login", (req, res) => {
-  const email = req.body.email;
-  const password = req.body.password;
-  // Ask the user to fill in the empty zones.
-  if (email.trim() === "" || password.trim() === "") {
-    missingEmailAndOrPassword(res);
-  }
-  const user = getUserByEmail(email, users);
-  if(user){
-     bcrypt.compare(password, user.password, (err, result) =>{
-        if (result) {
-          // the email and password match ==> set cookie session and redirect
-          req.session.user_id = user.id;
-          res.redirect('/urls');
-        }
-        else{
-          emailAndOrPasswordDoNotMatch(res);
-        }
-     });
-  }
-  else{
-    emailAndOrPasswordDoNotMatch(res);
-  }
-});
-
 
 /**
  * Route to GET register
@@ -242,47 +154,28 @@ app.get("/register", (req, res) => {
 });
 
 
-
 /**
- * POST request from the Form Submission to create a longURL
+ * Route to GET login
  */
-app.post("/urls", (req, res) => {
-  const userID = req.session.user_id;
-  const user = getUserById(userID, users);
-  if (!user) {
-    res
-      .status(403)
-      .send("Not Authorized");
+app.get("/login", (req, res) => {
+  // get user_id from the cookie session if it exists
+  const user_id = req.session.user_id;
+  // get the user if he exists or null if not
+  let user = null;
+  let urls = null;
+  if(user_id){
+    user = getUserById(user_id, users);
+    urls = urlsForUser(user_id, urlDatabase);
   }
-
-  // Create a random shortURL
-  const shortURL = generateRandomString();
-  // Add key: value ("shortURL": "longURL") to the object
-  if (req.body.longURL.trim() === "") {
-    res.send("Must be not empty");
+  const templateVars = {
+    user, urls
+  };
+  if (user){
+    res.redirect('/urls');
   }
-  const longURL = req.body.longURL;
-  const userUrl = { longURL, userID };
-  urlDatabase[shortURL] = userUrl;
-  // redirect shortURL to see its longURL
-  res.redirect(`/urls/${shortURL}`);
-});
-
-/**
- * Handle the POST request to delete a URL from the Object
- */
-app.post("/urls/:shortURL/delete", (req, res) => {
-  // here we don't use req.body because we get data from a link
-  // not input
-  const shortURL = req.params.shortURL;
-  const longURL = urlDatabase[shortURL]['longURL'];
-  if (!longURL) {
-    return res
-            .status(404)
-            .send(`The url ${shortURL} does not exist`);
+  else{
+    res.render('login', templateVars);
   }
-  delete urlDatabase[shortURL];
-  res.redirect("/urls");
 });
 
 /**
@@ -336,6 +229,113 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 
+// POST routes
+/**
+ * Route to POST login
+ */
+app.post("/login", (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+  // Ask the user to fill in the empty zones.
+  if (email.trim() === "" || password.trim() === "") {
+    missingEmailAndOrPassword(res);
+  }
+  const user = getUserByEmail(email, users);
+  if(user){
+     bcrypt.compare(password, user.password, (err, result) =>{
+        if (result) {
+          // the email and password match ==> set cookie session and redirect
+          req.session.user_id = user.id;
+          res.redirect('/urls');
+        }
+        else{
+          emailAndOrPasswordDoNotMatch(res);
+        }
+     });
+  }
+  else{
+    emailAndOrPasswordDoNotMatch(res);
+  }
+});
+
+/**
+ * Route to logout
+ */
+app.post("/logout", (req, res) => {
+  // if the user logs out we destroy the cookie session
+  req.session = null;
+  res.redirect("/urls");
+});
+
+/**
+ * Route to POST register
+ */
+app.post("/register", (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+  // Ask the user to fill in the empty zones.
+  if (email.trim() === "" || password.trim() === "") {
+    zonesEmpty(res);
+  }
+  else if (checkEmailAlreadyExists(email, users)) {
+    emailAlreadyExists(res);
+  }
+  else{
+    const userID1 = generateRandomString();
+    const userID2 = generateRandomString();
+    const id = userID1 + userID2;
+    // we hash the password once the user registers
+    bcrypt.hash(password, 10, (err, hash) => {
+      const user = { id, email, hash };
+      users[id] = user;
+      req.session.user_id = id;
+      res.redirect('/urls');
+    });
+  }
+});
+
+/**
+ * POST request from the Form Submission to create a longURL
+ */
+app.post("/urls", (req, res) => {
+  const userID = req.session.user_id;
+  const user = getUserById(userID, users);
+  if (!user) {
+    res
+      .status(403)
+      .send("Not Authorized");
+  }
+
+  // Create a random shortURL
+  const shortURL = generateRandomString();
+  // Add key: value ("shortURL": "longURL") to the object
+  if (req.body.longURL.trim() === "") {
+    res.send("Must be not empty");
+  }
+  const longURL = req.body.longURL;
+  const userUrl = { longURL, userID };
+  urlDatabase[shortURL] = userUrl;
+  // redirect shortURL to see its longURL
+  res.redirect(`/urls/${shortURL}`);
+});
+
+/**
+ * Handle the POST request to delete a URL from the Object
+ */
+app.post("/urls/:shortURL/delete", (req, res) => {
+  // here we don't use req.body because we get data from a link
+  // not input
+  const shortURL = req.params.shortURL;
+  const longURL = urlDatabase[shortURL]['longURL'];
+  if (!longURL) {
+    return res
+            .status(404)
+            .send(`The url ${shortURL} does not exist`);
+  }
+  delete urlDatabase[shortURL];
+  res.redirect("/urls");
+});
+
 /**
  * read the object and if we find the key: value
  * shortURL: longURL we edit longURL with the one given
@@ -350,7 +350,6 @@ app.post("/urls/:shortURL", (req, res) => {
   urlDatabase[shortURL]['longURL'] = longURL;
   res.redirect("/urls");
 });
-
 
 /**
  * we can here see the website of longURL if we click on shortURL

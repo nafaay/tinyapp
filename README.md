@@ -7,3 +7,18 @@ In this app we worked only with objects simulating a database.
 Short URLs are simulated with a helper function that can get a random 
 text in which the characters are alphanumeric.
 
+# Dependencies
+Node.js
+Express
+ejs
+body-parser
+bcryptjs
+cookie-session
+nodemon
+
+# How to start
+Run npm install command will install the dependencies.
+npm start will run the app automatically with the help of nodemon
+
+
+
