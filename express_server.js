@@ -16,7 +16,7 @@ const {
   zonesEmpty,
   emailAlreadyExists,
   missingEmailAndOrPassword
-} = require('./helper');
+} = require('./helper.js');
 
  /**  
  * Using express to communicate between client and server
@@ -71,31 +71,29 @@ const urlDatabase = {
 };
 
 /**
- * Object simulating a database of users.
- * each user id is an object of {id, email, password}
+  Object simulating a database of users.
+  each user is an object of {id, email, password}
+  here we encrypt password like that just to be able to make comparison
+  when the user enters one, in real world the passwords are encrypted
+  on the registartion and savec encrypted in the database
  */
+
 const users = {
   "userRandomID": {
     id: "userRandomID",
     email: "user@example.com",
-    // password: "purple-monkey-dinosaur"
-    // here we encrypt password like that just to be able to make comparison
-    // when the user enters one, in real world the passwords are encrypted
-    // on the registartion and savec encrypted in the database
-     password: bcrypt.hashSync("123", 10)
+    password: bcrypt.hashSync("purple-monkey-dinosaur", 10)
   },
   "user2RandomID": {
     id: "user2RandomID",
     email: "user2@example.com",
-    // password: "dishwasher-funk"
-    password: bcrypt.hashSync("456", 10)
+    password: bcrypt.hashSync("dishwasher-funk", 10)
   }
 };
 
 
 app.get("/", (req, res) => {
   const userID = req.session.user_id;
-  // const userID = req.session.userID;
   const user = getUserById(userID, users);
   if (!user) {
     res.redirect("/login");

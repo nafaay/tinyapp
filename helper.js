@@ -13,7 +13,7 @@ const getUserByEmail = function (email, database) {
       return user;
     }
   }
-  return null;
+  return undefined;
 }
 
 /**
@@ -96,7 +96,6 @@ const getRndInteger = function (min, max) {
   return Math.floor(Math.random() * (max - min)) + min;
 };
 
-//////////////////////////
 const urlDoesNotExist = function (resp) {
   resp
     .status(403)
@@ -132,13 +131,6 @@ const missingEmailAndOrPassword = function (resp) {
     .status(403)
     .send(`email and/or password are missing". Please <a href='/register'> Fill in empty areas</a>`);
 }
-
-
-////////////////////////
-
-
-
-
 
 module.exports = { 
   getUserByEmail, 
