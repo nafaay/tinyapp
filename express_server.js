@@ -158,24 +158,10 @@ app.get("/register", (req, res) => {
  * Route to GET login
  */
 app.get("/login", (req, res) => {
-  // get user_id from the cookie session if it exists
-  const user_id = req.session.user_id;
-  // get the user if he exists or null if not
-  let user = null;
-  let urls = null;
-  if(user_id){
-    user = getUserById(user_id, users);
-    urls = urlsForUser(user_id, urlDatabase);
-  }
   const templateVars = {
-    user, urls
+    user: null
   };
-  if (user){
-    res.redirect('/urls');
-  }
-  else{
-    res.render('login', templateVars);
-  }
+  res.render("login", templateVars);
 });
 
 /**
@@ -234,6 +220,7 @@ app.get("/urls/:shortURL", (req, res) => {
  * Route to POST login
  */
 app.post("/login", (req, res) => {
+
   const email = req.body.email;
   const password = req.body.password;
   // Ask the user to fill in the empty zones.
@@ -286,8 +273,9 @@ app.post("/register", (req, res) => {
     const id = userID1 + userID2;
     // we hash the password once the user registers
     bcrypt.hash(password, 10, (err, hash) => {
-      const user = { id, email, hash };
+      const user = { id, email, password: hash };
       users[id] = user;
+      
       req.session.user_id = id;
       res.redirect('/urls');
     });
