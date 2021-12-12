@@ -184,29 +184,26 @@ app.get("/urls/:shortURL", (req, res) => {
   const userID = req.session.user_id;
   const user = getUserById(userID, users);
   const shortURL = req.params.shortURL;
-  let longURL;
-  if (!user) {
-    res.status(403).send("Not Authorized");
-    return;
-  }
-    // check if shortURL belongs to this user
-  if (urlDatabase[shortURL]){
-    if (urlDatabase[shortURL].userID === userID) {
-        longURL = urlDatabase[shortURL].longURL;
-        const templateVars = {
-          user, shortURL, longURL
-        };
-        res.render("urls_show", templateVars);
-      }
-      else {
-        youHaveNoRights(res);
-      }
-  }
-    else{
-      urlDoesNotExist(res);
-  }
-});
 
+  if (!user) { 
+    return res.status(403).send("Not Authorized");
+  }
+
+  if (!urlDatabase[shortURL]) { 
+    return urlDoesNotExist(res);
+  }
+
+  if (urlDatabase[shortURL].userID !== userID) { 
+    return youHaveNoRights(res);
+  }
+
+  const { longURL } = urlDatabase[shortURL]
+  const templateVars = {
+    user, shortURL, longURL
+  };
+
+  res.render("urls_show", templateVars);
+});
 
 // POST routes
 /**
