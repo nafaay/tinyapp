@@ -1,7 +1,30 @@
 /**@author: Youssef Nafaa < nafaayoussef@gmail.com>
  * @project: tinyapp for bootcamp at lighthouse lab Canada
- * @date: November 2021
+ * @date: November - December 2021
 **/
+
+/**  
+* Using express to communicate between client and server
+*/
+const express = require("express");
+const app = express();
+/**
+ * morgan to detect errors without killing the server each time
+ */
+const morgan = require("morgan");
+/**
+ *  to be able to encrypt passwords
+ */
+const bcrypt = require('bcryptjs');
+/**
+ * to use cookies
+ */
+const cookieSession = require('cookie-session');
+app.use(cookieSession({
+  name: 'session',
+  keys: ['key1', 'key2'],
+  maxAge: 24 * 60 * 60 * 1000 // 24 hours
+}))
 
 // helper that contains our helper functions
 const {
@@ -18,31 +41,10 @@ const {
   missingEmailAndOrPassword
 } = require('./helper.js');
 
- /**  
- * Using express to communicate between client and server
- */
-const express = require("express");
-const app = express();
-/**
- * morgan to detect errors without killing the server each time
- */
-const morgan = require("morgan");
+
 const PORT = 8080; // default port 8080
-/**
- * to use cookies
- */
-const cookieSession = require('cookie-session');
-app.use(cookieSession({
-  name: 'session',
-  keys: ['key1', 'key2'],
-  maxAge: 24 * 60 * 60 * 1000 // 24 hours
-}))
 
-/**
- *  to be able to encrypt passwords
- */
-const bcrypt = require('bcryptjs');
-
+// MIDDLEWARES
 /**
  * Set ejs as the view engine
  */
@@ -111,12 +113,8 @@ app.get("/", (req, res) => {
 app.get("/urls", (req, res) => {
   const user_id = req.session.user_id;
   // get the user if he exists or null if not
-  let user = null;
-  let urls = null;
-  if (user_id) {
-    user = getUserById(user_id, users);
-    urls = urlsForUser(user_id, urlDatabase);
-  }
+  const user = getUserById(user_id, users);
+  const urls = urlsForUser(user_id, urlDatabase);
   // template to be sent to urls_index if user exists 
   // if not redirect to login
   const templateVars = {
@@ -136,12 +134,8 @@ app.get("/urls", (req, res) => {
  */
 app.get("/register", (req, res) => {
   const userID = req.session.user_id;
-  let user = null;
-  let  urlsOfUser = null;
-  if (userID) {
-    user = getUserById(userID, users);
-    urlsOfUser  = urlsForUser(userID, urlDatabase);
-  }
+  const  user = getUserById(userID, users);
+  const  urlsOfUser  = urlsForUser(userID, urlDatabase);
   const templateVars = {
     user, urls: urlsOfUser
   };
@@ -193,11 +187,11 @@ app.get("/urls/:shortURL", (req, res) => {
   let longURL;
   if (!user) {
     res.status(403).send("Not Authorized");
+    return;
   }
-  else{
     // check if shortURL belongs to this user
-    if (urlDatabase[shortURL]){
-      if (urlDatabase[shortURL].userID === userID) {
+  if (urlDatabase[shortURL]){
+    if (urlDatabase[shortURL].userID === userID) {
         longURL = urlDatabase[shortURL].longURL;
         const templateVars = {
           user, shortURL, longURL
@@ -207,10 +201,9 @@ app.get("/urls/:shortURL", (req, res) => {
       else {
         youHaveNoRights(res);
       }
-    }
+  }
     else{
       urlDoesNotExist(res);
-    }
   }
 });
 
