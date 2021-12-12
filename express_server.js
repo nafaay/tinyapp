@@ -292,6 +292,7 @@ app.post("/urls", (req, res) => {
     res
       .status(403)
       .send("Not Authorized");
+      return;
   }
 
   // Create a random shortURL
@@ -299,6 +300,7 @@ app.post("/urls", (req, res) => {
   // Add key: value ("shortURL": "longURL") to the object
   if (req.body.longURL.trim() === "") {
     res.send("Must be not empty");
+    return;
   }
   const longURL = req.body.longURL;
   const userUrl = { longURL, userID };
@@ -316,9 +318,10 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   const shortURL = req.params.shortURL;
   const longURL = urlDatabase[shortURL]['longURL'];
   if (!longURL) {
-    return res
-            .status(404)
-            .send(`The url ${shortURL} does not exist`);
+    res
+      .status(404)
+      .send(`The url ${shortURL} does not exist`);
+      return;
   }
   delete urlDatabase[shortURL];
   res.redirect("/urls");
@@ -347,9 +350,10 @@ app.get("/u/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   const longURL = urlDatabase[shortURL];
   if (!longURL) {
-    return res
-            .status(404)
-            .send(`The url ${shortURL} does not exist`);
+    res
+      .status(404)
+      .send(`The url ${shortURL} does not exist`);
+      return;
   } else {
     const longURL = urlDatabase[shortURL]['longURL'];
     res.redirect(longURL);
