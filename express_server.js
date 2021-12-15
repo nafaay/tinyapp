@@ -112,6 +112,10 @@ app.get("/", (req, res) => {
  */
 app.get("/urls", (req, res) => {
   const user_id = req.session.user_id;
+  if(!user_id){
+    res.redirect("/login");
+    return;
+  }
   // get the user if he exists or null if not
   const user = getUserById(user_id, users);
   const urls = urlsForUser(user_id, urlDatabase);
@@ -120,12 +124,7 @@ app.get("/urls", (req, res) => {
   const templateVars = {
     user, urls
   };
-  if (user) {
     res.render("urls_index", templateVars);
-  }
-  else {
-    res.render('login', templateVars);
-  }
 });
 
 
@@ -133,18 +132,10 @@ app.get("/urls", (req, res) => {
  * Route to GET register
  */
 app.get("/register", (req, res) => {
-  const userID = req.session.user_id;
-  const  user = getUserById(userID, users);
-  const  urlsOfUser  = urlsForUser(userID, urlDatabase);
   const templateVars = {
-    user, urls: urlsOfUser
+    user:null
   };
-  if (!user) {
-    res.render('register', templateVars);
-  }
-  else{
-    res.redirect('/urls');
-  }
+  res.render('register', templateVars);
 });
 
 
@@ -166,12 +157,12 @@ app.get("/login", (req, res) => {
 app.get("/urls/new", (req, res) => {
   const userID = req.session.user_id;
   const user = getUserById(userID, users);
-  if (!user) {
-    res.redirect('/urls');
-  }
   const templateVars = {
     user, urls: urlDatabase
   };
+  if (!user) {
+    return res.redirect('/login');
+  }
   res.render("urls_new", templateVars);
 });
 
@@ -227,11 +218,13 @@ app.post("/login", (req, res) => {
         }
         else{
           emailAndOrPasswordDoNotMatch(res);
+          return;
         }
      });
   }
   else{
     emailAndOrPasswordDoNotMatch(res);
+    return;
   }
 });
 
@@ -265,7 +258,6 @@ app.post("/register", (req, res) => {
     bcrypt.hash(password, 10, (err, hash) => {
       const user = { id, email, password: hash };
       users[id] = user;
-      
       req.session.user_id = id;
       res.redirect('/urls');
     });
@@ -305,8 +297,13 @@ app.post("/urls", (req, res) => {
 app.post("/urls/:shortURL/delete", (req, res) => {
   // here we don't use req.body because we get data from a link
   // not input
+  
   const shortURL = req.params.shortURL;
   const longURL = urlDatabase[shortURL]['longURL'];
+  const userID = req.session.user_id;
+  if(urlDatabase[shortURL].userID !== userID){
+    return(res.status(400).send("You have no rights to Delete"));    
+  }
   if (!longURL) {
     res
       .status(404)
@@ -337,6 +334,11 @@ app.post("/urls/:shortURL", (req, res) => {
  * Redirect any request to "/u/:shortURL" to its longURL
 */
 app.get("/u/:shortURL", (req, res) => {
+  const user_id = req.session.user_id;
+  if (!user_id) {
+    res.redirect("/login");
+    return;
+  }
   const shortURL = req.params.shortURL;
   const longURL = urlDatabase[shortURL];
   if (!longURL) {
